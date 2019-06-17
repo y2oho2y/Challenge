@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>HATEYOU</title>
+    <link href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.2/css/bootstrap.min.css" rel="stylesheet">
+</head>
+
+<body>
+    <div class="container">
+        <div class="container theme-showcase" role="main">
+            <div class="row">
+                <div class="col-md-12" style="text-align: center;">
+                    <img src="hateyou.jpg" width="70%" style="margin-bottom: 20px;"></img>
+                </div>
+                <div class="col-md-4"></div>
+                <div class="col-md-4">
+                    <input id="data" type="text" class="form-control" value="꺼져!"></input>
+                </div>
+                <div class="col-md-4"></div>
+                <div class="col-md-12" style="text-align: center;">
+                </div>
+                <div class="col-md-4" style=" margin: 20px;text-align: right;">
+                    <button id="request-address" class="btn btn-default" type="button">
+                        지갑
+                    </button>
+                </div>
+                <div class="col-md-4" style="text-align: center;">
+                    <button id="request-transaction" type="button" class="btn btn-default" style="margin: 20px;">
+                        보내기
+                    </button>
+                </div>
+                <div class="col-md-4"></div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/gh/icon-project/icon-sdk-js@latest/build/icon-sdk-js.web.min.js"></script>
+    <script>
+        var IconService = window['icon-sdk-js']
+
+        const { HttpProvider, IconBuilder, IconWallet, IconAmount, IconConverter } = IconService
+        const provider = new HttpProvider('https://ctz.solidwallet.io/api/v3')
+        const iconService = new IconService(provider)
+
+        var requestAddress = document.getElementById("request-address")
+        var requestTransaction = document.getElementById("request-transaction")
+
+        var fromAddress = ''
+        var data = document.getElementById("data")
+
+        window.addEventListener("ICONEX_RELAY_RESPONSE", eventHandler, false);
+        function eventHandler(event) {
+            var type = event.detail.type
+            var payload = event.detail.payload
+            switch (type) {
+                case "RESPONSE_ADDRESS":
+                    fromAddress = payload
+                    break
+                case "RESPONSE_JSON-RPC":
+                    break
+                default:
+                    break
+            }
+        }
+
+        requestAddress.onclick = function () {
+            window.dispatchEvent(new CustomEvent('ICONEX_RELAY_REQUEST', {
+                detail: {
+                    type: 'REQUEST_ADDRESS'
+                }
+            }))
+        }
+
+        requestTransaction.onclick = async function () {
+            var callTransactionBuilder = new IconBuilder.CallTransactionBuilder()
+            var callTransactionData = callTransactionBuilder
+                .from(fromAddress)
+                .to("cxb8fd8c1400b1aa60a9a8e5bd9d9b2462251a6f6f")
+                .nid(IconConverter.toBigNumber(1))
+                .nonce(IconConverter.toBigNumber(1))
+                .timestamp((new Date()).getTime() * 1000)
+                .stepLimit(IconConverter.toBigNumber('1000000'))
+                .version(IconConverter.toBigNumber('3'))
+                .method('enroll')
+                .params({
+                    Hateyou: data.value
+                })
+                .build()
+            scoreData = JSON.stringify({
+                "jsonrpc": "2.0",
+                "method": "icx_sendTransaction",
+                "params":
+                    IconConverter.toRawTransaction(callTransactionData),
+                "id": 1
+            })
+
+            var parsed = JSON.parse(scoreData)
+            await window.dispatchEvent(new CustomEvent('ICONEX_RELAY_REQUEST', {
+                detail: {
+                    type: 'REQUEST_JSON-RPC',
+                    payload: parsed
+                }
+            }))
+        }
+    </script>
+</body>
+
+</html>
+
+<style>
+    @import url('https://fonts.googleapis.com/css?family=Black+And+White+Picture&display=swap');
+    body {
+        /* background-image: url('company.jpeg');
+        background-size: auto 100%;
+        background-position: top;
+        background-repeat: no-repeat; */
+        font-family: 'Black And White Picture', sans-serif;
+        background-color: powderblue;
+    }
+</style>
